@@ -29,8 +29,8 @@ app.use(
   }),
 ) // Enable CORS
 app.use(express.json()) // Body parser for JSON data
-app.use(mongoSanitize()) // Sanitize data to prevent MongoDB Operator Injection
-app.use(xss()) // Sanitize data to prevent XSS attacks
+// app.use(mongoSanitize()) // Sanitize data to prevent MongoDB Operator Injection
+// app.use(xss()) // Sanitize data to prevent XSS attacks
 
 // Rate limiting to prevent brute-force attacks
 const limiter = rateLimit({
@@ -45,7 +45,8 @@ app.use("/api/auth", authRoutes)
 app.use("/api/users", userRoutes)
 
 // Global Error Handler
-app.use(errorHandler)
+// app.use(errorHandler)
 
 const PORT = config.port || 5000
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))
+ 
