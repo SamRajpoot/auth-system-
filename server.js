@@ -10,7 +10,8 @@ const config = require("./config/config")
 const authRoutes = require("./routes/authRoutes")
 const userRoutes = require("./routes/userRoutes")
 const errorHandler = require("./utils/errorHandler")
- 
+const session = require("express-session");
+const passport = require("./config/passport");
 
 const app = express()
 
@@ -19,6 +20,7 @@ mongoose
   .connect(config.mongoURI)
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err))
+
 
 // Security Middlewares
 app.use(helmet()) // Sets various HTTP headers for security
@@ -31,6 +33,12 @@ app.use(
 app.use(express.json()) // Body parser for JSON data
 // app.use(mongoSanitize()) // Sanitize data to prevent MongoDB Operator Injection
 // app.use(xss()) // Sanitize data to prevent XSS attacks
+
+// Add session and passport middlewares for social login
+app.use(session({ secret: "your_secret", resave: false, saveUninitialized: false }));
+app.use(passport.initialize());
+app.use(passport.session());
+
 
 // Rate limiting to prevent brute-force attacks
 const limiter = rateLimit({
