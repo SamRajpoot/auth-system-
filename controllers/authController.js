@@ -1,8 +1,79 @@
+// --- Email verification and password reset handlers ---
+const crypto = require("crypto");
+const sendEmail = require("../utils/sendEmail");
+
+async function verifyEmail(req, res, next) {
+  try {
+    const { token } = req.query;
+    if (!token) {
+      return res.status(400).json(ApiResponse.error("Verification token is required"));
+    }
+    const user = await User.findOne({ verificationToken: token });
+    if (!user) {
+      return res.status(400).json(ApiResponse.error("Invalid or expired verification token"));
+    }
+    user.isVerified = true;
+    user.verificationToken = undefined;
+    await user.save({ validateBeforeSave: false });
+    res.status(200).json(ApiResponse.success("Email verified successfully. You can now log in."));
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function forgotPassword(req, res, next) {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(200).json(ApiResponse.success("If that email is registered, a reset link has been sent."));
+    }
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = Date.now() + 60 * 60 * 1000; // 1 hour
+    await user.save({ validateBeforeSave: false });
+    const resetUrl = `${req.protocol}://${req.get("host")}/api/auth/reset-password?token=${resetToken}`;
+    await sendEmail({
+      to: user.email,
+      subject: "Password Reset",
+      html: `<p>Click <a href='${resetUrl}'>here</a> to reset your password. This link expires in 1 hour.</p>`
+    });
+    res.status(200).json(ApiResponse.success("If that email is registered, a reset link has been sent."));
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function resetPassword(req, res, next) {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+      return res.status(400).json(ApiResponse.error("Token and new password are required"));
+    }
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+    if (!user) {
+      return res.status(400).json(ApiResponse.error("Invalid or expired reset token"));
+    }
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+    res.status(200).json(ApiResponse.success("Password has been reset successfully. You can now log in."));
+  } catch (error) {
+    next(error);
+  }
+}
 const User = require("../models/User")
 const { generateAuthTokens, verifyToken } = require("../utils/jwt")
 const ApiResponse = require("../utils/apiResponse")
 const config = require("../config/config")
-
+// Removed duplicate crypto require
+// Removed duplicate sendEmail require
+// const jwt = require("jsonwebtoken")
+// const sendEmail = require("../utils/sendEmail")
 
 // ✅ Do this
 // @desc    Register user
@@ -17,23 +88,30 @@ async function register(req, res, next) {
       return res.status(400).json(ApiResponse.error("User already exists with this email"));
     }
 
-    const user = await User.create({ name, email, password });
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const user = await User.create({ name, email, password, verificationToken });
+
+    // Send verification email
+    const verifyUrl = `${req.protocol}://${req.get("host")}/api/auth/verify-email?token=${verificationToken}`;
+    await sendEmail({
+      to: user.email,
+      subject: "Verify your email",
+      html: `<p>Click <a href='${verifyUrl}'>here</a> to verify your email.</p>`
+    });
 
     const { accessToken, refreshToken } = generateAuthTokens(user._id);
     user.refreshToken = refreshToken;
-    await user.save({ validateBeforeSave: false }); // Save refresh token to DB
+    await user.save({ validateBeforeSave: false });
 
-
-    // Set refresh token as HTTP-only cookie
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // Use secure in production
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      sameSite: "strict", // CSRF protection
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: "strict",
     });
 
     res.status(201).json(
-      ApiResponse.success("User registered successfully", {
+      ApiResponse.success("User registered successfully. Please check your email to verify your account.", {
         user: {
           id: user._id,
           name: user.name,
@@ -43,6 +121,82 @@ async function register(req, res, next) {
         accessToken,
       })
     );
+
+
+
+// @desc    Verify email
+// @route   GET /api/auth/verify-email?token=...
+// @access  Public
+async function verifyEmail(req, res, next) {
+  try {
+    const { token } = req.query;
+    if (!token) {
+      return res.status(400).json(ApiResponse.error("Verification token is required"));
+    }
+    const user = await User.findOne({ verificationToken: token });
+    if (!user) {
+      return res.status(400).json(ApiResponse.error("Invalid or expired verification token"));
+    }
+    user.isVerified = true;
+    user.verificationToken = undefined;
+    await user.save({ validateBeforeSave: false });
+    res.status(200).json(ApiResponse.success("Email verified successfully. You can now log in."));
+  } catch (error) {
+    next(error);
+  }
+}
+
+// @desc    Forgot password
+// @route   POST /api/auth/forgot-password
+// @access  Public
+async function forgotPassword(req, res, next) {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(200).json(ApiResponse.success("If that email is registered, a reset link has been sent."));
+    }
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = Date.now() + 60 * 60 * 1000; // 1 hour
+    await user.save({ validateBeforeSave: false });
+    const resetUrl = `${req.protocol}://${req.get("host")}/api/auth/reset-password?token=${resetToken}`;
+    await sendEmail({
+      to: user.email,
+      subject: "Password Reset",
+      html: `<p>Click <a href='${resetUrl}'>here</a> to reset your password. This link expires in 1 hour.</p>`
+    });
+    res.status(200).json(ApiResponse.success("If that email is registered, a reset link has been sent."));
+  } catch (error) {
+    next(error);
+  }
+}
+
+// @desc    Reset password
+// @route   POST /api/auth/reset-password
+// @access  Public
+async function resetPassword(req, res, next) {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+      return res.status(400).json(ApiResponse.error("Token and new password are required"));
+    }
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+    if (!user) {
+      return res.status(400).json(ApiResponse.error("Invalid or expired reset token"));
+    }
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+    res.status(200).json(ApiResponse.success("Password has been reset successfully. You can now log in."));
+  } catch (error) {
+    next(error);
+  }
+}
   } catch (error) {
     next(error);
   }
@@ -158,4 +312,7 @@ module.exports = {
   login,
   logout,
   refreshToken,
+  verifyEmail,
+  forgotPassword,
+  resetPassword,
 }

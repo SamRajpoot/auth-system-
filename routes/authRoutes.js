@@ -10,4 +10,12 @@ router.post("/login", validate(loginSchema), login)
 router.post("/logout", protect, logout)
 router.post("/refresh-token", refreshToken)
 
+
+const { verifyEmail, forgotPassword, resetPassword } = require("../controllers/authController");
+
+router.get("/verify-email", verifyEmail);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
+
+
 module.exports = router
