@@ -12,11 +12,15 @@ router.post("/logout", protect, logout)
 router.post("/refresh-token", refreshToken)
 
 
-const { verifyEmail, forgotPassword, resetPassword } = require("../controllers/authController");
+const { verifyEmail, forgotPassword, resetPassword, requestOtp, verifyOtp } = require("../controllers/authController");
 
 router.get("/verify-email", verifyEmail);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
+
+// OTP based login
+router.post("/request-otp", requestOtp);
+router.post("/verify-otp", verifyOtp);
 
 // Google OAuth
 router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));

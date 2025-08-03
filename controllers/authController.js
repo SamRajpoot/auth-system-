@@ -307,6 +307,80 @@ const refreshToken = async (req, res, next) => {
   }
 }
 
+// --- OTP based login handlers ---
+// @desc    Request OTP for login
+// @route   POST /api/auth/request-otp
+// @access  Public
+async function requestOtp(req, res, next) {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json(ApiResponse.error("Email is required"));
+    }
+    const user = await User.findOne({ email });
+    if (!user || user.isDeleted) {
+      return res.status(200).json(ApiResponse.success("If that email is registered, an OTP has been sent."));
+    }
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    user.otp = otp;
+    user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    await user.save({ validateBeforeSave: false });
+    await sendEmail({
+      to: user.email,
+      subject: "Your OTP for Login",
+      html: `<p>Your OTP for login is <b>${otp}</b>. It expires in 10 minutes.</p>`
+    });
+    res.status(200).json(ApiResponse.success("If that email is registered, an OTP has been sent."));
+  } catch (error) {
+    next(error);
+  }
+}
+
+// @desc    Verify OTP and login
+// @route   POST /api/auth/verify-otp
+// @access  Public
+async function verifyOtp(req, res, next) {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json(ApiResponse.error("Email and OTP are required"));
+    }
+    const user = await User.findOne({ email }).select("+otp +otpExpires +refreshToken");
+    if (!user || user.isDeleted) {
+      return res.status(401).json(ApiResponse.error("Invalid credentials"));
+    }
+    if (!user.otp || !user.otpExpires || user.otpExpires < Date.now() || user.otp !== otp) {
+      return res.status(401).json(ApiResponse.error("Invalid or expired OTP"));
+    }
+    // OTP is valid, clear it
+    user.otp = undefined;
+    user.otpExpires = undefined;
+    const { accessToken, refreshToken } = generateAuthTokens(user._id);
+    user.refreshToken = refreshToken;
+    await user.save({ validateBeforeSave: false });
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: "strict",
+    });
+    res.status(200).json(
+      ApiResponse.success("Logged in successfully via OTP", {
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+        accessToken,
+      })
+    );
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   register,
   login,
@@ -315,4 +389,6 @@ module.exports = {
   verifyEmail,
   forgotPassword,
   resetPassword,
+  requestOtp,
+  verifyOtp,
 }
