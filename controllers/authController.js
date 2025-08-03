@@ -70,6 +70,7 @@ const User = require("../models/User")
 const { generateAuthTokens, verifyToken } = require("../utils/jwt")
 const ApiResponse = require("../utils/apiResponse")
 const config = require("../config/config")
+const ActivityLog = require("../models/ActivityLog")
 // Removed duplicate crypto require
 // Removed duplicate sendEmail require
 // const jwt = require("jsonwebtoken")
@@ -102,6 +103,13 @@ async function register(req, res, next) {
     const { accessToken, refreshToken } = generateAuthTokens(user._id);
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
+
+    // Log activity
+    await ActivityLog.create({
+      user: user._id,
+      action: "register",
+      ip: req.ip,
+    });
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
@@ -230,6 +238,12 @@ const login = async (req, res, next) => {
       sameSite: "strict",
     })
 
+    // Log activity
+    await ActivityLog.create({
+      user: user._id,
+      action: "login",
+      ip: req.ip,
+    });
     res.status(200).json(
       ApiResponse.success("Logged in successfully", {
         user: {
@@ -263,6 +277,12 @@ const logout = async (req, res, next) => {
       sameSite: "strict",
     })
 
+    // Log activity
+    await ActivityLog.create({
+      user: req.user.id,
+      action: "logout",
+      ip: req.ip,
+    });
     res.status(200).json(ApiResponse.success("Logged out successfully"))
   } catch (error) {
     next(error)
