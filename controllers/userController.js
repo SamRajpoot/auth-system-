@@ -101,10 +101,46 @@ const softDeleteUser = async (req, res, next) => {
   }
 }
 
+
+// @desc    Get users with pagination and search
+// @route   GET /api/users
+// @access  Private/Admin
+const getUsers = async (req, res, next) => {
+  try {
+    let { page = 1, limit = 10, search = "" } = req.query;
+    page = parseInt(page);
+    limit = parseInt(limit);
+    const query = {
+      isDeleted: false,
+      $or: [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ],
+    };
+    const users = await User.find(query)
+      .select("-refreshToken")
+      .skip((page - 1) * limit)
+      .limit(limit);
+    const total = await User.countDocuments(query);
+    res.status(200).json(
+      ApiResponse.success("Users fetched successfully", {
+        users,
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      })
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAllUsers,
   getProfile,
   updateProfile,
   changePassword,
   softDeleteUser,
+  getUsers,
 }

@@ -1,6 +1,6 @@
 const express = require("express")
 const {
-  getAllUsers,
+  getUsers,
   getProfile,
   updateProfile,
   changePassword,
@@ -13,7 +13,7 @@ const { validate, updateProfileSchema, changePasswordSchema } = require("../midd
 const router = express.Router()
 
 // Admin routes
-router.get("/", protect, authorize("admin"), getAllUsers)
+router.get("/", protect, authorize("admin"), getUsers)
 router.delete("/:id", protect, authorize("admin"), softDeleteUser)
 
 // User routes
