@@ -12,6 +12,7 @@ const userRoutes = require("./routes/userRoutes")
 const errorHandler = require("./utils/errorHandler")
 const session = require("express-session");
 const passport = require("./config/passport");
+const activityLogRoutes = require("./routes/activityLogRoutes");
 
 const app = express()
 
@@ -51,6 +52,7 @@ app.use(limiter)
 // Routes
 app.use("/api/auth", authRoutes)
 app.use("/api/users", userRoutes)
+app.use("/api/activity-logs", activityLogRoutes)
 
 // Global Error Handler
 // app.use(errorHandler)
