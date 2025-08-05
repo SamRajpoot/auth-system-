@@ -1,5 +1,6 @@
 const User = require("../models/User")
 const ApiResponse = require("../utils/apiResponse")
+const ActivityLog = require("../models/ActivityLog")
 
 // @desc    Get all users (Admin only)
 // @route   GET /api/users
@@ -42,7 +43,13 @@ const updateProfile = async (req, res, next) => {
     user.email = req.body.email || user.email
 
     const updatedUser = await user.save()
-
+    // Log activity
+    await ActivityLog.create({
+      user: user._id,
+      action: "update_profile",
+      details: { name: user.name, email: user.email },
+      ip: req.ip,
+    });
     res.status(200).json(
       ApiResponse.success("Profile updated successfully", {
         id: updatedUser._id,
@@ -76,6 +83,12 @@ const changePassword = async (req, res, next) => {
     user.password = newPassword // Pre-save hook will hash it
     await user.save()
 
+    // Log activity
+    await ActivityLog.create({
+      user: user._id,
+      action: "change_password",
+      ip: req.ip,
+    });
     res.status(200).json(ApiResponse.success("Password changed successfully"))
   } catch (error) {
     next(error)
@@ -95,11 +108,52 @@ const softDeleteUser = async (req, res, next) => {
     user.isDeleted = true
     await user.save({ validateBeforeSave: false })
 
+    // Log activity
+    await ActivityLog.create({
+      user: user._id,
+      action: "soft_delete",
+      ip: req.ip,
+    });
     res.status(200).json(ApiResponse.success("User soft deleted successfully"))
   } catch (error) {
     next(error)
   }
 }
+
+
+// @desc    Get users with pagination and search
+// @route   GET /api/users
+// @access  Private/Admin
+const getUsers = async (req, res, next) => {
+  try {
+    let { page = 1, limit = 10, search = "" } = req.query;
+    page = parseInt(page);
+    limit = parseInt(limit);
+    const query = {
+      isDeleted: false,
+      $or: [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ],
+    };
+    const users = await User.find(query)
+      .select("-refreshToken")
+      .skip((page - 1) * limit)
+      .limit(limit);
+    const total = await User.countDocuments(query);
+    res.status(200).json(
+      ApiResponse.success("Users fetched successfully", {
+        users,
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      })
+    );
+  } catch (error) {
+    next(error);
+  }
+};
 
 module.exports = {
   getAllUsers,
@@ -107,4 +161,5 @@ module.exports = {
   updateProfile,
   changePassword,
   softDeleteUser,
+  getUsers,
 }
