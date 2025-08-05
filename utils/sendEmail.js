@@ -8,8 +8,8 @@ async function sendEmail({ to, subject, html }) {
     host: "smtp.ethereal.email",
     port: 587,
     auth: {
-      user: 'jamel.huel2@ethereal.email', // Replace with your Ethereal user
-      pass: 'g1YMjXY6B33UcQZ67x',            // Replace with your Ethereal password
+      user: 'brennon.deckow@ethereal.email', // Replace with your Ethereal user
+      pass: 'XRKRv7SY5m7Hz89f14',            // Replace with your Ethereal password
     },
   });
 
