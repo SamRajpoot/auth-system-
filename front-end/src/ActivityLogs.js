@@ -1,6 +1,14 @@
 import React, { useContext, useEffect, useState } from "react";
 import { api } from "./api";
 import { AuthContext } from "./AuthContext";
+import {
+  Box,
+  Typography,
+  List,
+  ListItem,
+  ListItemText,
+  Paper
+} from "@mui/material";
 
 export default function ActivityLogs() {
   const { accessToken } = useContext(AuthContext);
@@ -16,15 +24,20 @@ export default function ActivityLogs() {
   }, [accessToken]);
 
   return (
-    <div>
-      <h2>Activity Logs</h2>
-      <ul>
-        {logs.map(log => (
-          <li key={log._id}>
-            {log.action} by {log.user?.name} ({log.user?.email}) at {new Date(log.createdAt).toLocaleString()}
-          </li>
-        ))}
-      </ul>
-    </div>
+    <Box sx={{ mb: 4 }}>
+      <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>Activity Logs</Typography>
+      <Paper sx={{ maxHeight: 300, overflow: 'auto' }}>
+        <List>
+          {logs.map(log => (
+            <ListItem key={log._id} divider>
+              <ListItemText
+                primary={`${log.action} by ${log.user?.name || 'Unknown'} (${log.user?.email || 'N/A'})`}
+                secondary={new Date(log.createdAt).toLocaleString()}
+              />
+            </ListItem>
+          ))}
+        </List>
+      </Paper>
+    </Box>
   );
 }

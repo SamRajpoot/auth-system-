@@ -9,6 +9,9 @@ import ResetPassword from "./ResetPassword";
 import Profile from "./Profile";
 import ChangePassword from "./ChangePassword";
 import AdminDashboard from "./AdminDashboard";
+import ActivityLogs from "./ActivityLogs";
+import UserList from "./UserList";
+import Home from "./Home";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./AuthContext";
@@ -19,6 +22,7 @@ function App() {
       <BrowserRouter>
         <Navbar />
         <Routes>
+          <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/otp-login" element={<OTPLogin />} />
@@ -28,6 +32,8 @@ function App() {
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute adminOnly={true}><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/activity-logs" element={<ProtectedRoute adminOnly={true}><ActivityLogs /></ProtectedRoute>} />
+          <Route path="/users" element={<ProtectedRoute adminOnly={true}><UserList /></ProtectedRoute>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
