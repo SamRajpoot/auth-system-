@@ -4,26 +4,25 @@ import { api } from "./api";
 import { AuthContext } from "./AuthContext";
 import { Box, Card, CardContent, Typography, TextField, Button, Checkbox, FormControlLabel, Divider, Alert } from "@mui/material";
 import GoogleIcon from "@mui/icons-material/Google";
+import GitHubIcon from "@mui/icons-material/GitHub";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
-  const { setAccessToken, setUser } = useContext(AuthContext);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [error, setError] = useState('');
+  const { login } = useContext(AuthContext);
+  const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
+    setError('');
     try {
-      const res = await api.post("/auth/login", { email, password });
-      setAccessToken(res.data.data.accessToken);
-      setUser(res.data.data.user);
-      setSuccess("Login successful!");
+      await login(email, password, remember);
+      navigate('/');
     } catch (err) {
-      setError("Login failed");
+      setError(err.response?.data?.message || 'Login failed');
     }
   };
 
@@ -32,26 +31,35 @@ export default function Login() {
     window.location.href = "http://localhost:5000/api/auth/google";
   };
 
+  const handleGithubLogin = () => {
+    window.location.href = "http://localhost:5000/api/auth/github";
+  };
+
   return (
     <Box sx={{
-      minHeight: "100vh",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      background: "linear-gradient(120deg, #f6d365 0%, #fda085 100%)",
-      position: "relative"
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'linear-gradient(180deg, #e0f7fa 0%, #fff 100%)',
+      backgroundImage: 'url(/clouds-bg.png)',
+      backgroundRepeat: 'no-repeat',
+      backgroundSize: 'cover',
     }}>
-      <Card sx={{ minWidth: 350, maxWidth: 400, mx: 2, boxShadow: 8, borderRadius: 3, backdropFilter: "blur(2px)" }}>
+      <Card sx={{ minWidth: 350, maxWidth: 400, mx: 2, boxShadow: 4, borderRadius: 24, backdropFilter: "blur(2px)", background: 'rgba(255,255,255,0.98)' }}>
         <CardContent>
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
             <Box sx={{ mb: 2 }}>
-              <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/Bitmap_Icon_Wave.png" alt="logo" width={48} height={48} style={{ borderRadius: 12 }} />
+              <img src="/logo.png" alt="Logo" width={48} height={48} style={{ borderRadius: 12 }} />
             </Box>
             <Typography variant="h6" fontWeight={700} align="center">Create your account</Typography>
             <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 2 }}>Get Started for free</Typography>
-            {error && <Alert severity="error" sx={{ width: "100%", mb: 1 }}>{error}</Alert>}
-            {success && <Alert severity="success" sx={{ width: "100%", mb: 1 }}>{success}</Alert>}
-            <Box component="form" onSubmit={handleLogin} sx={{ width: "100%" }}>
+            {error && (
+              <Typography color="error" sx={{ mt: 1, mb: 1 }}>
+                {error}
+              </Typography>
+            )}
+            <Box component="form" onSubmit={handleSubmit} sx={{ width: "100%" }}>
               <TextField
                 label="Email address"
                 type="email"
@@ -80,15 +88,46 @@ export default function Login() {
               <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 1, mb: 2, fontWeight: 700, fontSize: 18, py: 1.5, boxShadow: 2 }}>Login</Button>
             </Box>
             <Divider sx={{ my: 2 }}>or</Divider>
-            <Button
-              variant="contained"
-              fullWidth
-              startIcon={<GoogleIcon />}
-              sx={{ background: "linear-gradient(90deg, #232526 0%, #414345 100%)", color: "#fff", fontWeight: 700, fontSize: 16, py: 1.2, boxShadow: 2 }}
-              onClick={handleGoogleLogin}
-            >
-              Continue with Google
-            </Button>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 1 }}>
+              <Button
+                variant="contained"
+                fullWidth
+                startIcon={<GoogleIcon />}
+                sx={{
+                  background: 'linear-gradient(90deg, #fff 0%, #e0e0e0 100%)',
+                  color: '#222',
+                  fontWeight: 700,
+                  fontSize: 16,
+                  borderRadius: 2,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                  mb: 1,
+                  border: '1px solid #eee',
+                  '&:hover': { background: 'linear-gradient(90deg, #f5f5f5 0%, #e0e0e0 100%)' }
+                }}
+                onClick={handleGoogleLogin}
+              >
+                Continue with Google
+              </Button>
+              <Button
+                variant="contained"
+                fullWidth
+                startIcon={<GitHubIcon />}
+                sx={{
+                  background: 'linear-gradient(90deg, #fff 0%, #e0e0e0 100%)',
+                  color: '#222',
+                  fontWeight: 700,
+                  fontSize: 16,
+                  borderRadius: 2,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                  mb: 1,
+                  border: '1px solid #eee',
+                  '&:hover': { background: 'linear-gradient(90deg, #f5f5f5 0%, #e0e0e0 100%)' }
+                }}
+                onClick={handleGithubLogin}
+              >
+                Continue with GitHub
+              </Button>
+            </Box>
           </Box>
         </CardContent>
       </Card>

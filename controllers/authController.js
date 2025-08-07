@@ -217,11 +217,14 @@ const login = async (req, res, next) => {
   try {
     const { email, password } = req.body
 
+
     const user = await User.findOne({ email }).select("+password +refreshToken")
     if (!user || user.isDeleted) {
       return res.status(401).json(ApiResponse.error("Invalid credentials"))
     }
-
+    if (!user.isVerified) {
+      return res.status(403).json(ApiResponse.error("Please verify your email before logging in."))
+    }
     const isMatch = await user.comparePassword(password)
     if (!isMatch) {
       return res.status(401).json(ApiResponse.error("Invalid credentials"))
