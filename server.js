@@ -27,9 +27,9 @@ mongoose
 app.use(helmet()) // Sets various HTTP headers for security
 app.use(
   cors({
-    origin: "*", // Adjust as needed for your frontend origin
+    origin: "http://localhost:3000", // React frontend
     credentials: true,
-  }),
+  })
 ) // Enable CORS
 app.use(express.json()) // Body parser for JSON data
 // app.use(mongoSanitize()) // Sanitize data to prevent MongoDB Operator Injection
