@@ -15,11 +15,15 @@ passport.use(
       try {
         let user = await User.findOne({ email: profile.emails[0].value });
         if (!user) {
+          // Assign admin role for specific emails
+          const adminEmails = ["admin@example.com", "sameerchoughtai0102@gmail.com"];
+          const role = adminEmails.includes(profile.emails[0].value.toLowerCase()) ? "admin" : "user";
           user = await User.create({
             name: profile.displayName,
             email: profile.emails[0].value,
             password: crypto.randomBytes(16).toString("hex"),
             isVerified: true,
+            role,
           });
         }
         return done(null, user);
@@ -42,11 +46,15 @@ passport.use(
         let email = (profile.emails && profile.emails[0] && profile.emails[0].value) || `${profile.username}@github.com`;
         let user = await User.findOne({ email });
         if (!user) {
+          // Assign admin role for specific emails
+          const adminEmails = ["admin@example.com", "sameerchoughtai0102@gmail.com"];
+          const role = adminEmails.includes(email.toLowerCase()) ? "admin" : "user";
           user = await User.create({
             name: profile.displayName || profile.username,
             email,
             password: crypto.randomBytes(16).toString("hex"),
             isVerified: true,
+            role,
           });
         }
         return done(null, user);
