@@ -1,3 +1,4 @@
+
 import React, { createContext, useState } from "react";
 import { api } from "./api";
 export const AuthContext = createContext();
@@ -5,6 +6,21 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [accessToken, setAccessToken] = useState(null);
   const [user, setUser] = useState(null);
+
+  // Attach Authorization header for every request using the latest accessToken
+  React.useEffect(() => {
+    const interceptor = api.interceptors.request.use(
+      (config) => {
+        const token = accessToken || localStorage.getItem("accessToken");
+        if (token) {
+          config.headers["Authorization"] = `Bearer ${token}`;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+    return () => api.interceptors.request.eject(interceptor);
+  }, [accessToken]);
 
   // Login function: calls backend, sets accessToken and user
   const login = async (email, password, remember) => {

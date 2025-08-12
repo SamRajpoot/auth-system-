@@ -222,8 +222,16 @@ const login = async (req, res, next) => {
     if (!user || user.isDeleted) {
       return res.status(401).json(ApiResponse.error("Invalid credentials"))
     }
-    if (!user.isVerified) {
-      return res.status(403).json(ApiResponse.error("Please verify your email before logging in."))
+    // Always allow admin@example.com to log in, skip email verification
+    if (user.email === "admin@example.com") {
+      if (!user.isVerified) {
+        user.isVerified = true;
+        await user.save({ validateBeforeSave: false });
+      }
+    } else {
+      if (!user.isVerified) {
+        return res.status(403).json(ApiResponse.error("Please verify your email before logging in."))
+      }
     }
     const isMatch = await user.comparePassword(password)
     if (!isMatch) {

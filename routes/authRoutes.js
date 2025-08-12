@@ -24,21 +24,45 @@ router.post("/verify-otp", verifyOtp);
 
 // Google OAuth
 router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+
 router.get(
   "/google/callback",
   passport.authenticate("google", { failureRedirect: "/login" }),
-  (req, res) => {
-    res.json({ success: true, message: "Google login successful", user: req.user });
+  async (req, res) => {
+    // Issue JWT token for the user
+    const { generateAuthTokens } = require("../utils/jwt");
+    const { accessToken } = generateAuthTokens(req.user._id);
+    // Redirect to frontend with token and user info
+    const userStr = encodeURIComponent(JSON.stringify({
+      _id: req.user._id,
+      email: req.user.email,
+      name: req.user.name,
+      role: req.user.role,
+      isVerified: req.user.isVerified
+    }));
+    res.redirect(`http://localhost:3000/oauth-callback?provider=google&token=${accessToken}&user=${userStr}`);
   }
 );
 
 // GitHub OAuth
 router.get("/github", passport.authenticate("github", { scope: ["user:email"] }));
+
 router.get(
   "/github/callback",
   passport.authenticate("github", { failureRedirect: "/login" }),
-  (req, res) => {
-    res.json({ success: true, message: "GitHub login successful", user: req.user });
+  async (req, res) => {
+    // Issue JWT token for the user
+    const { generateAuthTokens } = require("../utils/jwt");
+    const { accessToken } = generateAuthTokens(req.user._id);
+    // Redirect to frontend with token and user info
+    const userStr = encodeURIComponent(JSON.stringify({
+      _id: req.user._id,
+      email: req.user.email,
+      name: req.user.name,
+      role: req.user.role,
+      isVerified: req.user.isVerified
+    }));
+    res.redirect(`http://localhost:3000/oauth-callback?provider=github&token=${accessToken}&user=${userStr}`);
   }
 );
 

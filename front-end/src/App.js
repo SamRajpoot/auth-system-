@@ -16,6 +16,8 @@ import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { AuthProvider } from "./AuthContext";
 
+import OAuthCallback from "./OAuthCallback";
+
 function App() {
   return (
     <AuthProvider>
@@ -34,6 +36,7 @@ function App() {
           <Route path="/admin" element={<ProtectedRoute adminOnly={true}><AdminDashboard /></ProtectedRoute>} />
           <Route path="/activity-logs" element={<ProtectedRoute adminOnly={true}><ActivityLogs /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute adminOnly={true}><UserList /></ProtectedRoute>} />
+          <Route path="/oauth-callback" element={<OAuthCallback />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
