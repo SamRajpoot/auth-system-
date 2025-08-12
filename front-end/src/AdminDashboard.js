@@ -1,7 +1,8 @@
 import React from "react";
+
+import { Box, Card, CardContent, Typography, Divider, Tabs, Tab } from "@mui/material";
 import UserList from "./UserList";
 import ActivityLogs from "./ActivityLogs";
-import { Box, Card, CardContent, Typography, Divider } from "@mui/material";
 
 const gradientBg = {
   minHeight: "100vh",
@@ -23,6 +24,7 @@ const cardStyle = {
 };
 
 export default function AdminDashboard() {
+  const [tab, setTab] = React.useState(0);
   return (
     <Box sx={gradientBg}>
       <Card sx={cardStyle}>
@@ -31,9 +33,13 @@ export default function AdminDashboard() {
             Admin Dashboard
           </Typography>
           <Divider sx={{ my: 2 }} />
-          <UserList />
+          <Tabs value={tab} onChange={(_, v) => setTab(v)} centered>
+            <Tab label="Users" />
+            <Tab label="Activity Logs" />
+          </Tabs>
           <Divider sx={{ my: 2 }} />
-          <ActivityLogs />
+          {tab === 0 && <UserList />}
+          {tab === 1 && <ActivityLogs />}
         </CardContent>
       </Card>
     </Box>
